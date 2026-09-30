@@ -171,7 +171,7 @@ export default function Home() {
   const serverMessagesQuery = trpc.conversations.messages.useQuery({ conversationId: numericActiveId ?? 0 }, { enabled: Boolean(isAuthenticated && numericActiveId) });
   const utils = trpc.useUtils();
   const createConversation = trpc.conversations.create.useMutation();
-  const deleteConversation = trpc.conversations.remove.useMutation();
+  const deleteConversation = trpc.conversations.delete.useMutation();
   const chatMutation = trpc.ai.chat.useMutation();
   const visionMutation = trpc.ai.vision.useMutation();
   const documentMutation = trpc.ai.document.useMutation();
@@ -195,7 +195,7 @@ export default function Home() {
   const ensureConversation = async (title: string) => {
     if (!isAuthenticated || numericActiveId) return numericActiveId;
     const createdId = await createConversation.mutateAsync({ title: title.slice(0, 80) || "New conversation" });
-    if (createdId) { setActiveId(String(createdId)); await utils.conversations.list.invalidate(); return createdId; }
+    if (createdId) { setActiveId(String(createdId.id)); await utils.conversations.list.invalidate(); return createdId.id; }
     return undefined;
   };
 
@@ -236,7 +236,7 @@ export default function Home() {
 
   const handleNew = () => { const id = makeGuestId(); setActiveId(id); setMessages([]); setInput(""); setPendingAttachment(undefined); setPendingDataUri(undefined); setIntent("general"); setSidebarOpen(false); setLocalRows(previous => [{ id, title: "New conversation", updatedAt: new Date().toISOString(), isGuest: true }, ...previous].slice(0, 20)); };
   const handleSelect = (id: string) => { setActiveId(id); setSidebarOpen(false); setErrorMessage(""); };
-  const handleDelete = async (id: string) => { if (/^\d+$/.test(id) && isAuthenticated) { await deleteConversation.mutateAsync({ conversationId: Number(id) }); await utils.conversations.list.invalidate(); } else { setLocalRows(previous => previous.filter(row => row.id !== id)); setLocalMessageMap(previous => { const next = { ...previous }; delete next[id]; return next; }); } if (activeId === id) handleNew(); };
+  const handleDelete = async (id: string) => { if (/^\d+$/.test(id) && isAuthenticated) { await deleteConversation.mutateAsync({ id: Number(id) }); await utils.conversations.list.invalidate(); } else { setLocalRows(previous => previous.filter(row => row.id !== id)); setLocalMessageMap(previous => { const next = { ...previous }; delete next[id]; return next; }); } if (activeId === id) handleNew(); };
   const handleAttach = () => fileInputRef.current?.click();
   const handleFile = async (file?: File) => {
     if (!file) return;
