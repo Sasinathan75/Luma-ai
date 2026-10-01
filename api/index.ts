@@ -1,3 +1,3 @@
-import { app } from "../server/_core/app";
+import { app } from "../dist/app.js";
 
 export default app;
